@@ -53,8 +53,13 @@ class Task(models.Model):
         related_name='reviewing_tasks')
 
     due_date = models.DateField()
+
+    # API does not display creator but Backend must know creator for permission checks
     creator = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='created_tasks')
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_tasks')
 
     def __str__(self):
         return self.title
@@ -68,14 +73,17 @@ class Comment(models.Model):
     )
     author = models.ForeignKey(
         'auth.User',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='authored_comments'
     )
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['created_at']
 
     def __str__(self):
-        return f'Comment by {self.author.email} on {self.task.title}'
+        if self.author:
+            return f'Comment by {self.author.email} on {self.task.title}'
+        return f'Comment on {self.task.title}'
