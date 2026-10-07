@@ -5,9 +5,13 @@ from django.db import models
 
 class Board(models.Model):
     title = models.CharField(max_length=250)
-    members = models.ManyToManyField('auth.User', related_name='member_boards')
+    members = models.ManyToManyField(
+        'auth.User',
+        related_name='member_boards')
     owner = models.ForeignKey(
-        'auth.User', on_delete=models.CASCADE, related_name='owned_boards')
+        'auth.User',
+        on_delete=models.PROTECT,
+        related_name='owned_boards')
 
     def __str__(self):
         return self.title
