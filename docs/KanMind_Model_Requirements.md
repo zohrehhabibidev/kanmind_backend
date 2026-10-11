@@ -1,6 +1,6 @@
 # KanMind Model Requirements — Card 06
 
-> Purpose: Derive the data structure, relationships, required/optional information, and business rules from the official KanMind API documentation **before implementing Django models**.
+> Purpose: Document the data structure, relationships, required/optional information, and business rules derived from the official KanMind API documentation, alongside the implemented Django model architecture.
 >
 > Scope: `User`, `Board`, `Task`, `Comment`
 >
@@ -10,18 +10,22 @@
 
 ## 1. User Requirements
 
-> The User model is provided/expected by the project context. Do not invent a separate authentication model.
+> Implemented: `auth_app.CustomUser` extends Django's `AbstractUser` and replaces the default `auth.User` through `AUTH_USER_MODEL = "auth_app.CustomUser"`. It has no `username` field; unique `email` is the `USERNAME_FIELD`, and `fullname` is stored directly on CustomUser. The custom `UserManager` handles user/superuser creation, email normalization, and password hashing.
+>
+> The database has been reset and migrations applied successfully (reported project status). Registration and login business logic, including token responses, are still planned; the model and manager do not implement these API workflows. Requiredness below describes the API documentation, not model field constraints or completed endpoint validation.
 
 | Item | Classification | Required / Optional | Notes |
 |---|---|---|---|
 | `id` | Model data | System-generated | Unique user identifier returned by the API as `user_id` or `id`. |
-| `fullname` | Model data | Appears in registration request; explicit requiredness not stated | Used in user representations throughout the API. |
-| `email` | Model data | Appears in registration/login requests; explicit requiredness not stated | Used for login and email lookup. |
-| `password` | Authentication-related model data | Appears in registration/login requests; explicit requiredness not stated | Must be handled by the provided Django user/authentication system. |
+| `fullname` | Model data | Appears in registration request; explicit requiredness not stated | Stored directly on CustomUser; used in user representations throughout the API. |
+| `email` | Model data | Appears in registration/login requests; explicit requiredness not stated | Unique on CustomUser and used as `USERNAME_FIELD`; email login and lookup remain API requirements. |
+| `password` | Authentication-related model data | Appears in registration/login requests; explicit requiredness not stated | Inherited from AbstractUser; the custom UserManager uses Django's `set_password()` to store a hash. |
 | `repeated_password` | API-only validation data | Registration only | Used to compare against `password`; not persistent model data. |
 | `token` | Authentication data, not a direct User model field | Returned after registration/login | Managed through DRF token authentication; do not add a custom `token` field to User. |
 
 ### User Relationships
+
+All six relationships below are implemented using `settings.AUTH_USER_MODEL`, resolving to CustomUser. Board membership uses `ManyToManyField`; the other five use `ForeignKey`. `User` in this document means the CustomUser domain actor, not Django's default `auth.User`.
 
 | Related Model | Relationship Role |
 |---|---|
@@ -29,8 +33,10 @@
 | `Board` | A User can be one of multiple board `members`. |
 | `Task` | A User can be a task `assignee`. |
 | `Task` | A User can be a task `reviewer`. |
-| `Task` | The system must know the task `creator` because task deletion depends on it. The exact field name is not specified by the API documentation. |
+| `Task` | The system must know the task creator because task deletion depends on it. Implemented as `Task.creator`; the API documentation does not specify the internal field name. |
 | `Comment` | A User is the `author` of a comment. |
+
+Implementation note: `Task.creator` and `Comment.author` are nullable and use `SET_NULL` on user deletion. The requirements below describe their roles when records are created; the API documentation does not specify how missing creators/authors after user deletion should be represented or handled. This remains unresolved and does not change the API contract.
 
 ---
 
@@ -157,7 +163,7 @@ These are different API representations of the same underlying relationships, no
 | `Task` | `board` | `Board` | Exactly one Board per Task. |
 | `Task` | `assignee` | `User` | Zero or one User; must be a Board member. |
 | `Task` | `reviewer` | `User` | Zero or one User; must be a Board member. |
-| `Task` | `creator` | `User` | Exactly one creator is required by deletion rules; exact model field name is not specified. |
+| `Task` | `creator` | `User` | Creator tracking is required by deletion rules; implemented as nullable `Task.creator` with `SET_NULL` on user deletion. |
 | `Task` | `comments` | `Comment` | One Task can have multiple Comments. |
 | `Comment` | `task` | `Task` | Exactly one Task per Comment. |
 | `Comment` | `author` | `User` | Exactly one User; assigned from authentication. |
@@ -205,9 +211,9 @@ Explicitly documented optional fields:
 
 ## 8. Card 06 Result
 
-The model-design requirements derived from the complete API documentation are now clear enough to continue to the actual Django model design step.
+The model-design requirements derived from the complete API documentation are reflected in the implemented CustomUser, Board, Task, and Comment models. API validation, automatic user assignment, and permission enforcement remain business requirements, not guarantees provided by model relationships alone.
 
-Before implementation, the model design must preserve these key facts:
+The model architecture and planned API implementation must preserve these key facts:
 
 1. A Board has one owner, multiple members, and multiple Tasks.
 2. A Task belongs to one Board.
@@ -230,4 +236,4 @@ Derived from:
 - **KanMind Backend Master Checklist**
 - Trello Card **[06] Model-Anforderungen aus kompletter API-Doku ableiten**
 
-No Django model implementation is included in this document.
+This document describes the implemented model architecture and planned API requirements; it does not contain Django implementation code. API requirements were checked against the local official `API Endpoint Dokumentation.pdf` (21 pages). The CustomUser architecture does not change documented request/response fields: registration uses `fullname`, `email`, `password`, and `repeated_password`; login uses `email` and `password`; both return `token`, `fullname`, `email`, and `user_id`. Expanded user representations use `id`, `email`, and `fullname`; comment `author` responses contain the author's fullname.

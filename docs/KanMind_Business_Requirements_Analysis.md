@@ -1,7 +1,9 @@
 # KanMind Business Requirements Analysis
 
 > This document explains the main business requirements of the KanMind backend in simple English.  
-> The goal is to understand the product before making technical decisions with Django and Django REST Framework.
+> The goal is to explain the product requirements and distinguish them from the current implementation with Django and Django REST Framework.
+>
+> Current status: CustomUser and the domain models are implemented. The database has been reset and migrations applied successfully (reported project status). Registration and login business logic are not implemented yet. Workflows, permissions, and functional requirements below describe required behavior, not completed API functionality.
 
 ---
 
@@ -47,12 +49,15 @@ Board
 
 A **User** is a registered person who can log in to the system.
 
+The implemented account model is `auth_app.CustomUser`, based on Django's `AbstractUser`. It replaces the default `auth.User`, has no `username` field, and uses unique Email as `USERNAME_FIELD`. Registration and Email/Password login are planned API functionality.
+
 A User can have different roles depending on the Board or Task:
 
 - Board Owner
 - Board Member
 - Task Assignee
 - Task Reviewer
+- Task Creator
 - Comment Author
 
 A User does not have to be a Member of every Board in the system.
@@ -98,6 +103,8 @@ Important User information:
 - `fullname`
 - `email`
 - authentication data
+
+`fullname` is stored directly on CustomUser. The custom `UserManager` handles user/superuser creation, email normalization, and password hashing through Django. This model support does not implement registration or login business logic.
 
 ### 4.2 Board
 
@@ -145,11 +152,12 @@ Important Comment information:
 ## 5. Entity Relationships
 
 ```text
-User
+User (CustomUser)
 ├── owns Board(s)
 ├── is Member of Board(s)
 ├── can be Assignee of Task(s)
 ├── can be Reviewer of Task(s)
+├── can be Creator of Task(s)
 └── can be Author of Comment(s)
 
 Board
@@ -168,8 +176,9 @@ Important notes:
 - Every Comment belongs to one Task.
 - The Comment Author comes from the authenticated User.
 
-> This section describes the business relationships only.  
-> It does not decide yet if Django should use `ForeignKey`, `ManyToManyField`, or another technical solution.
+> These business relationships are implemented through `settings.AUTH_USER_MODEL`, which resolves to CustomUser. Board `members` uses `ManyToManyField`; Board `owner`, Task `assignee`, `reviewer`, `creator`, and Comment `author` use `ForeignKey`.
+>
+> Task `creator` and Comment `author` can become null after user deletion (`SET_NULL`). The official API does not define behavior for these cases; no additional API behavior is assumed.
 
 ---
 
@@ -177,10 +186,10 @@ Important notes:
 
 ### 6.1 Authentication Flow
 
+Planned API flow: registration and login each return a Token and user information on success; a separate login after registration is not required by the documented token response.
+
 ```text
-Register
-↓
-Login
+Register or Login with Email and Password
 ↓
 Receive Token
 ↓
@@ -305,6 +314,8 @@ The Dashboard can show:
 
 ### Authentication
 
+Planned functionality; the CustomUser model and custom UserManager are implemented, but registration/login business logic and token responses are not.
+
 - User can register.
 - User can log in with Email and Password.
 - Backend returns an authentication Token.
@@ -363,7 +374,7 @@ It is important to separate **what the system must do** from **how we implement 
 | Task Status has only four allowed values | Choices or Validation |
 
 > During Business Analysis, focus first on the Requirement.  
-> Technical decisions come later during Architecture and Implementation.
+> The CustomUser model and user relationships are now implemented architecture decisions. API permissions and validation still require their own implementation.
 
 ---
 
@@ -374,10 +385,12 @@ These points still need to be checked in the official project sources:
 - What exactly is the Guest User?
 - Does Guest use a normal User account?
 - Does Guest have special permissions?
-- Can a Member add or remove other Members, or only the Owner?
+- Resolved: A Board Member or Owner can add or remove Members through Board update.
 - Can a Task move directly from `to-do` to `done`, or must it follow the full order?
 - Can a Comment be edited?
-- Does the Owner also need to be a Board Member, or are Owner and Member separate roles?
+- Resolved: Owner and Member are separate roles; the Owner may add themselves as a Member. Task and Comment actions documented as requiring membership still require it.
+- How should the API handle Tasks or Comments whose Creator or Author becomes null after user deletion?
+- The official `assigned-to-me` endpoint description and permissions refer to Assignee, but its `200` status text also mentions Reviewer. This source inconsistency needs clarification; no broader filtering requirement is assumed.
 
 > If the official documentation does not answer a question, we should not invent Backend behavior.
 
@@ -394,6 +407,8 @@ For this project, use this order:
 5. Frontend for integration testing
 
 If the Frontend or Video is different from the official API Documentation, the **API Documentation has priority**.
+
+This review used the local official `API Endpoint Dokumentation.pdf` (21 pages). CustomUser preserves the documented API contract: registration accepts `fullname`, `email`, `password`, and `repeated_password`; login accepts `email` and `password`; both return `token`, `fullname`, `email`, and `user_id`. Expanded user data uses `id`, `email`, and `fullname`, while Comment `author` responses contain the author's fullname. No username request field is introduced.
 
 ---
 
