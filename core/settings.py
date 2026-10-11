@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     "kanban_app",
 ]
 
+AUTH_USER_MODEL = "auth_app.CustomUser"
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",

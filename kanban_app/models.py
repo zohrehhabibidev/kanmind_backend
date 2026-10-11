@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 # Create your models here.
@@ -6,10 +7,10 @@ from django.db import models
 class Board(models.Model):
     title = models.CharField(max_length=250)
     members = models.ManyToManyField(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         related_name='member_boards')
     owner = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name='owned_boards')
 
@@ -42,7 +43,7 @@ class Task(models.Model):
     priority = models.CharField(max_length=10, choices=Priority.choices)
 
     assignee = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -50,7 +51,7 @@ class Task(models.Model):
     )
 
     reviewer = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -60,7 +61,7 @@ class Task(models.Model):
 
     # API does not display creator but Backend must know creator for permission checks
     creator = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='created_tasks')
@@ -76,7 +77,7 @@ class Comment(models.Model):
         related_name='comments'
     )
     author = models.ForeignKey(
-        'auth.User',
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         related_name='authored_comments'
