@@ -20,3 +20,9 @@ class BoardSerializer(serializers.ModelSerializer):
             'tasks_high_prio_count',
             'owner_id'
         ]
+
+
+class BoardCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Board
+        fields = ['title', 'members']

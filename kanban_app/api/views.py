@@ -1,9 +1,14 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework.views import APIView
+from django.db.models import Count, Q
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q, Count
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
-from kanban_app.api.serializers import BoardSerializer
+from kanban_app.api.serializers import (
+    BoardCreateSerializer,
+    BoardSerializer,
+)
 from kanban_app.models import Board
 
 
@@ -35,6 +40,20 @@ class BoardViewSet(ModelViewSet):
                 )
             )
         )
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return BoardCreateSerializer
+        return BoardSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        board = serializer.save(owner=self.request.user)
+        board = self.get_queryset().get(id=board.id)
+        output_serializer = BoardSerializer(board)
+        return Response(output_serializer.data,
+                        status=status.HTTP_201_CREATED)
 
 
 class TaskViewSet(ModelViewSet):
