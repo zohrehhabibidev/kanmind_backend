@@ -1,5 +1,11 @@
 from django.urls import path
-from kanban_app.api.views import BoardViewSet, CommentViewSet, EmailCheckView, TaskViewSet
+
+from kanban_app.api.views import (
+    BoardViewSet,
+    CommentViewSet,
+    EmailCheckView,
+    TaskViewSet,
+)
 
 
 urlpatterns = [
@@ -11,7 +17,8 @@ urlpatterns = [
     path(
         'boards/<int:pk>/',
         BoardViewSet.as_view(
-            {'get': 'retrieve', 'patch': 'partial_update', 'delete': 'destroy'}),
+            {'get': 'retrieve', 'patch': 'partial_update',
+             'delete': 'destroy'}),
         name='board-detail'),
 
     path(

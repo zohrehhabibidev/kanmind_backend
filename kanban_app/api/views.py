@@ -8,8 +8,10 @@ from rest_framework.viewsets import ModelViewSet
 from kanban_app.api.permissions import IsBoardOwnerOrMember
 from kanban_app.api.serializers import (
     BoardCreateSerializer,
-    BoardSerializer,
     BoardDetailSerializer,
+    BoardSerializer,
+    BoardUpdateOutputSerializer,
+    BoardUpdateSerializer
 )
 from kanban_app.models import Board
 
@@ -27,9 +29,9 @@ class BoardViewSet(ModelViewSet):
     def _get_board_list_queryset(self):
         return (
             self.queryset
+            .annotate(**self._board_counts())
             .filter(self._board_access_filter())
             .distinct()
-            .annotate(**self._board_counts())
         )
 
     def _board_access_filter(self):
@@ -55,8 +57,11 @@ class BoardViewSet(ModelViewSet):
         }
 
     def get_serializer_class(self):
+        """Select the input or output serializer for the board action."""
         if self.action == 'create':
             return BoardCreateSerializer
+        if self.action == 'partial_update':
+            return BoardUpdateSerializer
         if self.action == 'retrieve':
             return BoardDetailSerializer
         return BoardSerializer
@@ -71,6 +76,20 @@ class BoardViewSet(ModelViewSet):
             output_serializer.data,
             status=status.HTTP_201_CREATED
         )
+
+    def partial_update(self, request, *args, **kwargs):
+        """Update supplied board fields and return owner and member details."""
+        board = self.get_object()
+        serializer = self.get_serializer(
+            board, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        board = serializer.save()
+
+        if getattr(board, '_prefetched_objects_cache', None) is not None:
+            board._prefetched_objects_cache = {}
+
+        return Response(BoardUpdateOutputSerializer(board).data)
 
 
 class TaskViewSet(ModelViewSet):
