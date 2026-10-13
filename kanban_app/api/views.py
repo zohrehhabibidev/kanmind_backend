@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -11,9 +12,13 @@ from kanban_app.api.serializers import (
     BoardDetailSerializer,
     BoardSerializer,
     BoardUpdateOutputSerializer,
-    BoardUpdateSerializer
+    BoardUpdateSerializer,
+    EmailCheckSerializer,
+    UserSerializer
 )
 from kanban_app.models import Board
+
+User = get_user_model()
 
 
 class BoardViewSet(ModelViewSet):
@@ -106,6 +111,23 @@ class CommentViewSet(ModelViewSet):
 
 
 class EmailCheckView(APIView):
+    """Look up a registered user by email."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        pass
+        """Return user details for a valid, registered email."""
+        email = request.query_params.get('email')
+
+        if not email:
+            return Response(
+                {'error': 'Email parameter is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = EmailCheckSerializer(data={'email': email})
+        serializer.is_valid(raise_exception=True)
+
+        user = User.objects.filter(
+            email=serializer.validated_data['email']).first()
+        if user:
+            return Response(UserSerializer(user).data)
+        return Response(status=status.HTTP_404_NOT_FOUND)

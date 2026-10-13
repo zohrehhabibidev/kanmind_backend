@@ -14,6 +14,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'fullname']
 
 
+class EmailCheckSerializer(serializers.Serializer):
+    """Validate the email query parameter."""
+    email = serializers.EmailField()
+
+
 class BoardSerializer(serializers.ModelSerializer):
     """Expose board summary fields and annotated counts."""
     member_count = serializers.IntegerField(read_only=True)
