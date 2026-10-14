@@ -81,8 +81,8 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         ]
 
 
-class TaskAssignedSerializer(TaskDetailSerializer):
-    class Meta (TaskDetailSerializer.Meta):
+class TaskListSerializer(TaskDetailSerializer):
+    class Meta(TaskDetailSerializer.Meta):
         fields = (
             TaskDetailSerializer.Meta.fields[:1]
             + ['board']

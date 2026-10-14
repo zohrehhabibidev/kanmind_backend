@@ -14,7 +14,7 @@ from kanban_app.api.serializers import (
     BoardUpdateOutputSerializer,
     BoardUpdateSerializer,
     EmailCheckSerializer,
-    TaskAssignedSerializer,
+    TaskListSerializer,
     UserSerializer
 )
 from kanban_app.models import Board, Task
@@ -104,10 +104,11 @@ class TaskViewSet(ModelViewSet):
 
     def assigned_to_me(self, request, *args, **kwargs):
         tasks = Task.objects.filter(assignee=request.user)
-        return Response(TaskAssignedSerializer(tasks, many=True).data)
+        return Response(TaskListSerializer(tasks, many=True).data)
 
     def reviewing(self, request, *args, **kwargs):
-        pass
+        tasks = Task.objects.filter(reviewer=request.user)
+        return Response(TaskListSerializer(tasks, many=True).data)
 
 
 class CommentViewSet(ModelViewSet):
