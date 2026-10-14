@@ -40,3 +40,12 @@ class CanCreateTask(BasePermission):
         board_id = self.validate_board_id(board_id)
         board = get_object_or_404(Board, pk=board_id)
         return board.members.filter(pk=request.user.pk).exists()
+
+
+class IsTaskBoardMember(BasePermission):
+    """Allow board members to access a task."""
+
+    def has_object_permission(self, request, view, obj):
+        return obj.board.members.filter(
+            pk=request.user.pk
+        ).exists()

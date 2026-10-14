@@ -105,18 +105,15 @@ class TaskCreateSerializer(serializers.ModelSerializer):
     )
 
     def validate(self, attrs):
-        board = attrs.get('board')
-        assignee = attrs.get('assignee')
-        reviewer = attrs.get('reviewer')
+        board = self.instance.board if self.instance else attrs.get('board')
 
-        if assignee and not board.members.filter(pk=assignee.pk).exists():
-            raise serializers.ValidationError({
-                'assignee_id': 'Assignee must be a board member.'
-            })
-        if reviewer and not board.members.filter(pk=reviewer.pk).exists():
-            raise serializers.ValidationError({
-                'reviewer_id': 'Reviewer must be a board member.'
-            })
+        for field in ('assignee', 'reviewer'):
+            user = attrs.get(field)
+            if user and not board.members.filter(pk=user.pk).exists():
+                raise serializers.ValidationError({
+                    f'{field}_id': f'{field.capitalize()} must be a board member.'
+                })
+
         return attrs
 
     class Meta:
@@ -129,6 +126,33 @@ class TaskCreateSerializer(serializers.ModelSerializer):
             'priority',
             'assignee_id',
             'reviewer_id',
+            'due_date'
+        ]
+
+
+class TaskUpdateSerializer(TaskCreateSerializer):
+    class Meta(TaskCreateSerializer.Meta):
+        fields = [
+            'title',
+            'description',
+            'status',
+            'priority',
+            'assignee_id',
+            'reviewer_id',
+            'due_date'
+        ]
+
+
+class TaskUpdateOutputSerializer(TaskDetailSerializer):
+    class Meta(TaskDetailSerializer.Meta):
+        fields = [
+            'id',
+            'title',
+            'description',
+            'status',
+            'priority',
+            'assignee',
+            'reviewer',
             'due_date'
         ]
 

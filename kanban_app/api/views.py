@@ -6,7 +6,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from kanban_app.api.permissions import CanCreateTask, IsBoardOwnerOrMember
+from kanban_app.api.permissions import (
+    CanCreateTask,
+    IsBoardOwnerOrMember,
+    IsTaskBoardMember
+)
 from kanban_app.api.serializers import (
     BoardCreateSerializer,
     BoardDetailSerializer,
@@ -16,6 +20,8 @@ from kanban_app.api.serializers import (
     EmailCheckSerializer,
     TaskCreateSerializer,
     TaskListSerializer,
+    TaskUpdateOutputSerializer,
+    TaskUpdateSerializer,
     UserSerializer
 )
 from kanban_app.models import Board, Task
@@ -103,6 +109,25 @@ class TaskViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsBoardOwnerOrMember, CanCreateTask]
     queryset = Task.objects.all()
     serializer_class = TaskCreateSerializer
+
+    def get_permissions(self):
+        if self.action == 'partial_update':
+            return [IsAuthenticated(), IsTaskBoardMember()]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.action == 'partial_update':
+            return TaskUpdateSerializer
+        return super().get_serializer_class()
+
+    def partial_update(self, request, *args, **kwargs):
+        task = self.get_object()
+        serializer = self.get_serializer(
+            task, data=request.data, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save()
+        return Response(TaskUpdateOutputSerializer(task).data)
 
     def assigned_to_me(self, request, *args, **kwargs):
         tasks = Task.objects.filter(assignee=request.user)
