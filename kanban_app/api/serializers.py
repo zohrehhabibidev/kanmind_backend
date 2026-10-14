@@ -81,6 +81,15 @@ class TaskDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class TaskAssignedSerializer(TaskDetailSerializer):
+    class Meta (TaskDetailSerializer.Meta):
+        fields = (
+            TaskDetailSerializer.Meta.fields[:1]
+            + ['board']
+            + TaskDetailSerializer.Meta.fields[1:]
+        )
+
+
 class BoardDetailSerializer(serializers.ModelSerializer):
     """Expose board details with nested members and tasks."""
     members = UserSerializer(many=True, read_only=True)
