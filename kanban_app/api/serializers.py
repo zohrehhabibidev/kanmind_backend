@@ -90,6 +90,49 @@ class TaskListSerializer(TaskDetailSerializer):
         )
 
 
+class TaskCreateSerializer(serializers.ModelSerializer):
+    assignee_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='assignee',
+        required=False,
+        allow_null=True
+    )
+    reviewer_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='reviewer',
+        required=False,
+        allow_null=True
+    )
+
+    def validate(self, attrs):
+        board = attrs.get('board')
+        assignee = attrs.get('assignee')
+        reviewer = attrs.get('reviewer')
+
+        if assignee and not board.members.filter(pk=assignee.pk).exists():
+            raise serializers.ValidationError({
+                'assignee_id': 'Assignee must be a board member.'
+            })
+        if reviewer and not board.members.filter(pk=reviewer.pk).exists():
+            raise serializers.ValidationError({
+                'reviewer_id': 'Reviewer must be a board member.'
+            })
+        return attrs
+
+    class Meta:
+        model = Task
+        fields = [
+            'board',
+            'title',
+            'description',
+            'status',
+            'priority',
+            'assignee_id',
+            'reviewer_id',
+            'due_date'
+        ]
+
+
 class BoardDetailSerializer(serializers.ModelSerializer):
     """Expose board details with nested members and tasks."""
     members = UserSerializer(many=True, read_only=True)

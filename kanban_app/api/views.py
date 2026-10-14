@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
-from kanban_app.api.permissions import IsBoardOwnerOrMember
+from kanban_app.api.permissions import CanCreateTask, IsBoardOwnerOrMember
 from kanban_app.api.serializers import (
     BoardCreateSerializer,
     BoardDetailSerializer,
@@ -14,6 +14,7 @@ from kanban_app.api.serializers import (
     BoardUpdateOutputSerializer,
     BoardUpdateSerializer,
     EmailCheckSerializer,
+    TaskCreateSerializer,
     TaskListSerializer,
     UserSerializer
 )
@@ -99,8 +100,9 @@ class BoardViewSet(ModelViewSet):
 
 
 class TaskViewSet(ModelViewSet):
-    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember]
+    permission_classes = [IsAuthenticated, IsBoardOwnerOrMember, CanCreateTask]
     queryset = Task.objects.all()
+    serializer_class = TaskCreateSerializer
 
     def assigned_to_me(self, request, *args, **kwargs):
         tasks = Task.objects.filter(assignee=request.user)
@@ -109,6 +111,16 @@ class TaskViewSet(ModelViewSet):
     def reviewing(self, request, *args, **kwargs):
         tasks = Task.objects.filter(reviewer=request.user)
         return Response(TaskListSerializer(tasks, many=True).data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        task = serializer.save(creator=request.user)
+        output_serializer = TaskListSerializer(task)
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class CommentViewSet(ModelViewSet):
