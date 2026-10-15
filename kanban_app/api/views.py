@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -18,6 +19,7 @@ from kanban_app.api.serializers import (
     BoardSerializer,
     BoardUpdateOutputSerializer,
     BoardUpdateSerializer,
+    CommentSerializer,
     EmailCheckSerializer,
     TaskCreateSerializer,
     TaskListSerializer,
@@ -25,7 +27,7 @@ from kanban_app.api.serializers import (
     TaskUpdateSerializer,
     UserSerializer
 )
-from kanban_app.models import Board, Task
+from kanban_app.models import Board, Comment, Task
 
 User = get_user_model()
 
@@ -152,8 +154,20 @@ class TaskViewSet(ModelViewSet):
 
 
 class CommentViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = Comment.objects.all()
 
-    pass
+    def get_permissions(self):
+        if self.action == 'list':
+            return [IsAuthenticated(), IsTaskBoardMember()]
+        return super().get_permissions()
+
+    def list(self, request, task_id=None, *args, **kwargs):
+        task = get_object_or_404(Task, pk=task_id)
+        self.check_object_permissions(request, task)
+        comments = task.comments.all()
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
 
 
 class EmailCheckView(APIView):
