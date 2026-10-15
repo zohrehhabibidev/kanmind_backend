@@ -11,6 +11,7 @@ from kanban_app.api.permissions import (
     CanCreateTask,
     CanDeleteTask,
     IsBoardOwnerOrMember,
+    IsCommentAuthor,
     IsTaskBoardMember,
 )
 from kanban_app.api.serializers import (
@@ -158,8 +159,10 @@ class CommentViewSet(ModelViewSet):
     queryset = Comment.objects.all()
 
     def get_permissions(self):
-        if self.action == 'list':
+        if self.action in ['list', 'create']:
             return [IsAuthenticated(), IsTaskBoardMember()]
+        if self.action == 'destroy':
+            return [IsAuthenticated(), IsCommentAuthor()]
         return super().get_permissions()
 
     def list(self, request, task_id=None, *args, **kwargs):
@@ -168,6 +171,21 @@ class CommentViewSet(ModelViewSet):
         comments = task.comments.all()
         serializer = CommentSerializer(comments, many=True)
         return Response(serializer.data)
+
+    def create(self, request, task_id=None, *args, **kwargs):
+        task = get_object_or_404(Task, pk=task_id)
+        self.check_object_permissions(request, task)
+        serializer = CommentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(task=task, author=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, task_id=None, pk=None, *args, **kwargs):
+        task = get_object_or_404(Task, pk=task_id)
+        comment = get_object_or_404(Comment, pk=pk, task=task)
+        self.check_object_permissions(request, comment)
+        comment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class EmailCheckView(APIView):
