@@ -8,8 +8,9 @@ from rest_framework.viewsets import ModelViewSet
 
 from kanban_app.api.permissions import (
     CanCreateTask,
+    CanDeleteTask,
     IsBoardOwnerOrMember,
-    IsTaskBoardMember
+    IsTaskBoardMember,
 )
 from kanban_app.api.serializers import (
     BoardCreateSerializer,
@@ -113,6 +114,8 @@ class TaskViewSet(ModelViewSet):
     def get_permissions(self):
         if self.action == 'partial_update':
             return [IsAuthenticated(), IsTaskBoardMember()]
+        if self.action == 'destroy':
+            return [IsAuthenticated(), CanDeleteTask()]
         return super().get_permissions()
 
     def get_serializer_class(self):

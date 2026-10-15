@@ -49,3 +49,13 @@ class IsTaskBoardMember(BasePermission):
         return obj.board.members.filter(
             pk=request.user.pk
         ).exists()
+
+
+class CanDeleteTask(BasePermission):
+    """Allow task creators and board owners to delete tasks."""
+
+    def has_object_permission(self, request, view, obj):
+        return (
+            obj.creator_id == request.user.pk
+            or obj.board.owner_id == request.user.pk
+        )
