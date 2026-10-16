@@ -111,7 +111,9 @@ class TaskCreateSerializer(serializers.ModelSerializer):
             user = attrs.get(field)
             if user and not board.members.filter(pk=user.pk).exists():
                 raise serializers.ValidationError({
-                    f'{field}_id': f'{field.capitalize()} must be a board member.'
+                    f'{field}_id': (
+                        f'{field.capitalize()} must be a board member.'
+                    )
                 })
 
         return attrs

@@ -59,7 +59,8 @@ class Task(models.Model):
 
     due_date = models.DateField()
 
-    # API does not display creator but Backend must know creator for permission checks
+    # API does not display creator but Backend must know creator
+    # for permission checks.
     creator = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

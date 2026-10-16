@@ -12,7 +12,10 @@ class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        (_("Personal info"), {"fields": ("fullname", "first_name", "last_name")}),
+        (
+            _("Personal info"),
+            {"fields": ("fullname", "first_name", "last_name")},
+        ),
         (
             _("Permissions"),
             {
@@ -30,7 +33,8 @@ class CustomUserAdmin(UserAdmin):
             {
                 "classes": ("wide",),
                 "fields": (
-                    "email", "fullname", "usable_password", "password1", "password2",
+                    "email", "fullname", "usable_password",
+                    "password1", "password2",
                 ),
             },
         ),

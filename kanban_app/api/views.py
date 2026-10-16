@@ -203,7 +203,6 @@ class EmailCheckView(APIView):
             )
         serializer = EmailCheckSerializer(data={'email': email})
         serializer.is_valid(raise_exception=True)
-
         user = User.objects.filter(
             email=serializer.validated_data['email']).first()
         if user:
