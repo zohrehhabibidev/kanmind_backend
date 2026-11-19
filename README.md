@@ -6,6 +6,15 @@ KanMind is a collaborative Kanban task management application. This backend prov
 
 The backend runs independently. No frontend installation is required.
 
+## Live Demo
+
+KanMind is deployed with Django REST Framework, Gunicorn,
+Supervisor, and Nginx on an Ubuntu-based server.
+
+Live Demo: https://zohreh-habibi.developerakademie.org/
+
+Visitors can create their own account to test the application.
+
 ## Requirements
 
 - Python 3.12 or later, with `pip` and the `venv` module available. The installed Django package declares Python >=3.12; the existing development environment uses Python 3.14.6. Other Python versions have not been tested for this README.
